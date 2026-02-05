@@ -1,35 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import HomePage from './pages/HomePage';
+import TeamPage from './pages/TeamPage';
+import WeatherPage from './pages/WeatherPage';
+import { WeatherProvider } from './contexts/WeatherContext';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <WeatherProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* "/" 경로에 Layout을 먼저 배치하고, 그 안의 Outlet 자리에 자식들을 넣습니다. */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<HomePage />} /> {/* 기본 화면 */}
+            <Route path="team" element={<TeamPage />} /> {/* "/team" 경로 */}
+            <Route path="weather" element={<WeatherPage />} /> { /* "/weather" 경로 */ }
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </WeatherProvider>
+  );
 }
 
 export default App
+
