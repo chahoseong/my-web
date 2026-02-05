@@ -4,7 +4,8 @@ export default function NavBar() {
   const navItems = [
     { name: '홈', path: '/' },
     { name: '팀 소개', path: '/team' },
-    { name: '날씨', path: '/weather' }
+    { name: '날씨', path: '/weather' },
+    { name: '패션', path: '/fashion' }
   ];
 
   return (

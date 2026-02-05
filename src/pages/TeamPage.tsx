@@ -1,64 +1,59 @@
 import { useState, useEffect } from 'react';
-import avatar1 from '../assets/team/avatar1.png';
-import avatar2 from '../assets/team/avatar2.png';
-import avatar3 from '../assets/team/avatar3.png';
-import avatar4 from '../assets/team/avatar4.png';
-import avatar5 from '../assets/team/avatar5.png';
+import axios from 'axios';
 import TeamMemberCard from '../components/TeamMemberCard';
 
-const INITIAL_TEAM_MEMBERS = [
-  {
-    id: 1,
-    name: '김 픽셀 (PM)',
-    role: '프로젝트 매니저',
-    description: '아이디어를 도트로 하나하나 구현해내는 실행력의 끝판왕입니다.',
-    image: avatar1,
-    color: 'border-yellow-400',
-    isOnline: true
-  },
-  {
-    id: 2,
-    name: '이 바이트 (CTO)',
-    role: '메인 개발자',
-    description: '서버를 0과 1로 지배하며, 버그 없는 코드를 위해 밤을 지새웁니다.',
-    image: avatar2,
-    color: 'border-blue-400',
-    isOnline: true
-  },
-  {
-    id: 3,
-    name: '박 스프라이트 (CDO)',
-    role: '디자인 총괄',
-    description: '모든 디자인을 픽셀 단위로 정밀하게 다듬는 예술가입니다.',
-    image: avatar3,
-    color: 'border-purple-400',
-    isOnline: false
-  },
-  {
-    id: 4,
-    name: '최 프레임 (Developer)',
-    role: '프론트엔드 엔지니어',
-    description: '부드러운 화면 전환과 최적의 프레임워크를 연구합니다.',
-    image: avatar4,
-    color: 'border-green-400',
-    isOnline: true
-  },
-  {
-    id: 5,
-    name: '정 해상도 (Marketing)',
-    role: '마케팅 전략가',
-    description: '우리의 가치를 가장 높은 해상도로 세상에 알립니다.',
-    image: avatar5,
-    color: 'border-pink-400',
-    isOnline: false
-  }
-];
+// 서버에서 제공하는 멤버 정보 인터페이스
+interface Member {
+  id: number;
+  name: string;
+  gender: string;
+  role: string;
+  description: string;
+  avatar: string; // 이미지 URL 또는 경로
+  style: string;
+  location: string;
+  isOnline?: boolean; // 선택적 (기존 호환성 유지)
+}
 
 export default function TeamPage() {
-  const [members, setMembers] = useState(INITIAL_TEAM_MEMBERS);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTeamData = async () => {
+      try {
+        setLoading(true);
+        // 1. 멤버 이름 목록 가져오기
+        const listResponse = await axios.get('http://127.0.0.1:8000/members');
+        const names: string[] = listResponse.data;
+
+        // 2. 각 멤버의 상세 정보 가져오기 (병렬 처리)
+        const detailPromises = names.map(name => 
+          axios.get(`http://127.0.0.1:8000/members/${name}`)
+        );
+        
+        const detailResponses = await Promise.all(detailPromises);
+        const detailedMembers = detailResponses.map(res => ({
+          ...res.data,
+          // 실시간성을 위해 무작위로 온라인 상태 부여 (기존 코드의 느낌 유지)
+          isOnline: Math.random() > 0.3
+        }));
+
+        setMembers(detailedMembers);
+      } catch (error) {
+        console.error('팀 정보를 불러오는 데 실패했습니다:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeamData();
+  }, []);
 
   // 시뮬레이션: 3초마다 무작위 한 명의 접속 상태를 변경합니다.
   useEffect(() => {
+    if (members.length === 0) return;
+
     const interval = setInterval(() => {
       setMembers(prevMembers => {
         const randomIndex = Math.floor(Math.random() * prevMembers.length);
@@ -69,7 +64,16 @@ export default function TeamPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [members.length]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-slate-500 font-medium">팀 정보를 최신 상태로 불러오고 있습니다...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-slate-100 min-h-full">
@@ -77,8 +81,8 @@ export default function TeamPage() {
         <h2 className="text-4xl font-black text-slate-800 uppercase tracking-widest mb-4">
           Meet the <span className="text-blue-600">Pixel Team</span>
         </h2>
-        <p className="text-slate-500 font-medium">8비트 감성으로 뭉친 우리 팀을 소개합니다!</p>
-        <p className="text-xs text-slate-400 mt-2 font-mono">Status updates in real-time...</p>
+        <p className="text-slate-500 font-medium">서버에서 실시간으로 가져온 우리 팀원들을 소개합니다!</p>
+        <p className="text-xs text-slate-400 mt-2 font-mono">Connected to API: 127.0.0.1:8000</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -89,6 +93,7 @@ export default function TeamPage() {
     </div>
   );
 }
+
 
 
 
